@@ -1,0 +1,137 @@
+﻿@page "/courses"
+@using BlazorSkola.Shared
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NM
+
+
+<h3>Test</h3>
+<br />
+<br />
+<div class="col-md-3 mb-3">
+    <label class="control-label">PRETRAGA KURSEVA</label>
+    <input class="form-control" @bind="@Pretraga" placeholder="Pretraga " />
+    <button class="btn btn-block btn-success" @onclick="PretraziK">Pretraži</button>
+</div>
+
+<br />
+<button class="btn btn-block btn-success col-md-3" @onclick=OpenDialog> Dodaj Kurs </button>
+<br />
+
+
+<table class='table'>
+    <thead>
+        <tr>
+            <th>Naziv Kursa</th>
+            <th>Izmeni/Brisi</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (Kurs k in ListaKurseva)
+        {
+            <tr>
+                <td>@k.NazivKursa</td>
+                <td>
+                    <button class="btn btn-outline-info oi oi-pencil" @onclick="() => Izmeni(k)"></button> |
+                    <button class="btn btn btn-outline-danger oi oi-trash" @onclick="() => Brisi(k)"></button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<MatDialog @bind-IsOpen="@dialogIsOpen">
+    @*<div class="modal-content">*@
+        <EditForm Model="@kurs" OnValidSubmit="@Sacuvaj">
+            <MatDialogTitle>Dodavanje/Izmena</MatDialogTitle>
+            <MatDialogContent>
+                <div class="form-group">
+                    <label>Naziv Kursa</label>
+                    <input class="form-control" @bind-value="kurs.NazivKursa" />
+                </div>
+            </MatDialogContent>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CancelDialog">Zatvori</button>
+                <button type="submit" class="btn btn-primary" data-dismiss="modal">Sacuvaj</button>
+            </div>
+        </EditForm>
+    @*</div>*@
+</MatDialog>
+
+@code {
+
+    public HubConnection HCK;
+    public Kurs kurs = new Kurs();
+    public List<Kurs> ListaKurseva = new List<Kurs>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        HCK = new HubConnectionBuilder().WithUrl(NM.ToAbsoluteUri("HubKursevi")).Build();
+        await HCK.StartAsync();
+
+        HCK.On<List<Kurs>>("KursKaKlijentu", lk =>
+        {
+            ListaKurseva = lk;
+            StateHasChanged();
+        });
+        await HCK.SendAsync("UcitajKurseve");
+    }
+
+    public async Task Sacuvaj()
+    {
+        //radnici.ID = ListaRadnika.Count + 1; // stavljeno radi provere.
+        await HCK.SendAsync("KursKaSrv", kurs);
+        kurs = new Kurs();
+        await HCK.SendAsync("UcitajKurseve");
+    }
+    public void Izmeni(Kurs k)
+    {
+        OpenDialog();
+        kurs = k;
+        StateHasChanged();
+        //ZatvoriDijalog();
+        //dialogJeOtvoren = false;
+
+    }
+    public async Task Brisi(Kurs k)
+    {
+        await HCK.SendAsync("BrisiKurs", k);
+        kurs = new Kurs();
+    }
+
+
+    private string Pretraga;
+
+    public void PretraziK()
+    {
+
+        HCK.SendAsync("PretraziKurseve", Pretraga);
+    }
+
+
+
+    bool dialogIsOpen = false;
+    public void OpenDialog()
+    {
+
+        dialogIsOpen = true;
+    }
+
+    public void CancelDialog()
+    {
+        dialogIsOpen = false;
+        kurs = new Kurs();
+    }
+
+
+    ////modalni prozor
+    //bool showModal = false;
+
+    //void ModalShow() => showModal = true;
+    //void ModalCancel()
+    //{
+    //    showModal = false;
+    //    //ako odustane napravi prazan objekat
+    //    kurs = new Kurs();
+    //}
+    //void ModalOk() => showModal = false;
+}

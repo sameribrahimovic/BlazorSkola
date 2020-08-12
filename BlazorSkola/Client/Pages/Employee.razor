@@ -1,0 +1,139 @@
+﻿@page "/employee"
+@using BlazorSkola.Shared
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NM
+
+
+
+<h3>MENADZMENT ZAPOSLENIH</h3>
+<br />
+<br />
+
+<div class="col-md-3 mb-3">
+    <label class="control-label">PRETRAGA ZAPOSLENIH</label>
+    <input class="form-control" @bind="@Pretraga" placeholder="Pretraga " />
+    <button class="btn btn-block btn-success" @onclick="PretraziZ">Pretraži</button>
+</div>
+
+<br />
+<br />
+<br />
+<button class="btn btn-block btn-success col-md-3" @onclick=OpenDialog> Dodaj Zaposlenog </button>
+<br />
+<table class='table'>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Ime</th>
+            <th>Prezime</th>
+            <th>Adresa</th>
+            <th>Grad</th>
+            <th>Kontakt Tel.</th>
+            <th>Email</th>
+            <th>Izmeni/Brisi</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (Radnik rad in ListaRadnika)
+        {
+            <tr>
+                <td>@rad.ID</td>
+                <td>@rad.Ime</td>
+                <td>@rad.Prezime</td>
+                <td>@rad.Adresa</td>
+                <td>@rad.Grad</td>
+                <td>@rad.KontaktTel</td>
+                <td>@rad.Email</td>
+                <td>
+                    <button class="btn btn-outline-info oi oi-pencil" @onclick="() => Izmeni(rad)"></button> |
+                    <button class="btn btn btn-outline-danger oi oi-trash" @onclick="() => Brisi(rad)"></button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+<br />
+<br />
+<br />
+
+<MatDialog @bind-IsOpen="@dialogIsOpen">
+    <MatDialogTitle>Dodaj / Izmeni Korisnika</MatDialogTitle>
+    <MatDialogContent><MatTextField Label="Ime Korisnika" @bind-Value="radnici.Ime"></MatTextField></MatDialogContent>
+    <MatDialogContent><MatTextField Label="Prezime Korisnika" @bind-Value="radnici.Prezime"></MatTextField></MatDialogContent>
+    <MatDialogContent><MatTextField Label="Adresa Korisnika" @bind-Value="radnici.Adresa"></MatTextField></MatDialogContent>
+    <MatDialogContent><MatTextField Label="Grad Korisnika" @bind-Value="radnici.Grad"></MatTextField></MatDialogContent>
+    <MatDialogContent><MatTextField Label="Kontakt Korisnika" @bind-Value="radnici.KontaktTel"></MatTextField></MatDialogContent>
+    <MatDialogContent><MatTextField Label="Email Korisnika" @bind-Value="radnici.Email"></MatTextField></MatDialogContent>
+    <MatDialogActions>
+        <MatButton OnClick="Sacuvaj">Dodaj</MatButton>
+        <MatButton OnClick="CancelDialog">Zatvori</MatButton>
+    </MatDialogActions>
+</MatDialog>
+
+@code {
+
+    public HubConnection HC;
+    public Radnik radnici = new Radnik();
+    public List<Radnik> ListaRadnika = new List<Radnik>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        HC = new HubConnectionBuilder().WithUrl(NM.ToAbsoluteUri("HubRadnici")).Build();
+        await HC.StartAsync();
+
+        HC.On<List<Radnik>>("KaKlijentu", lr =>
+        {
+            ListaRadnika = lr;
+            StateHasChanged();
+        });
+        await HC.SendAsync("UcitajZaposlene");
+    }
+
+    public async Task Sacuvaj()
+    {
+        await HC.SendAsync("RadKaSrv", radnici);
+        //radnici.ID = ListaRadnika.Count + 1; // stavljeno radi provere.
+        radnici = new Radnik();
+        await HC.SendAsync("UcitajZaposlene");
+    }
+    public void Izmeni(Radnik rad)
+    {
+        dialogIsOpen = true;
+        radnici = rad;
+        StateHasChanged();
+        //ZatvoriDijalog();
+        //dialogJeOtvoren = false;
+
+    }
+    public async Task Brisi(Radnik rad)
+    {
+        await HC.SendAsync("BrisiRadnika", rad);
+        radnici = new Radnik();
+    }
+
+
+    private string Pretraga;
+
+    public void PretraziZ()
+    {
+
+        HC.SendAsync("PretraziZaposlene", Pretraga);
+    }
+
+    bool dialogIsOpen = false;
+    public void OpenDialog()
+    {
+
+        dialogIsOpen = true;
+    }
+
+    public void CancelDialog()
+    {
+        dialogIsOpen = false;
+        radnici = new Radnik();
+    }
+
+}

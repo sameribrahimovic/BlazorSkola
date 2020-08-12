@@ -1,0 +1,175 @@
+﻿@page "/studentis"
+@using BlazorSkola.Shared
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NM
+
+<h3>MENADZMENT STUDENATA</h3>
+<br />
+<br />
+<div class="col-md-3 mb-3">
+    <label class="control-label">PRETRAGA STUDENATA</label>
+    <input class="form-control" @bind="@Pretraga" placeholder="Pretraga " />
+    <button class="btn btn-block btn-success" @onclick="PretraziS">Pretraži</button>
+</div>
+
+<br />
+<button class="btn btn-block btn-success col-md-3" @onclick=OpenDialog>Dodaj Studenta</button>
+<br />
+
+
+<table class='table'>
+    <thead>
+        <tr>
+            <th>Ime</th>
+            <th>Prezime</th>
+            <th>Kurs</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (Student st in ListaStudenata)
+        {
+        <tr>
+            <td>@st.Ime</td>
+            <td>@st.Prezime</td>
+            <td>@st.kurs.NazivKursa</td>
+            <td>
+                <button class="btn btn-outline-info oi oi-pencil" @onclick="() => Izmeni(st)"></button> |
+                <button class="btn btn btn-outline-danger oi oi-trash" @onclick="() => Brisi(st)"></button>
+            </td>
+        </tr>
+        }
+    </tbody>
+</table>
+
+<MatDialog @bind-IsOpen="@dialogIsOpen">
+    @*<div class="modal-content">*@
+    <EditForm Model="@studenti" OnValidSubmit="@Sacuvaj">
+        <MatDialogTitle>Dodavanje/Izmena</MatDialogTitle>
+        <MatDialogContent>
+            <div class="form-group">
+                <label>Ime</label>
+                <input class="form-control" @bind-value="studenti.Ime" />
+            </div>
+            <div class="form-group">
+                <label>Prezime</label>
+                <input class="form-control" @bind-value="studenti.Prezime" />
+            </div>
+            <div class="form-group">
+                <label>Kurs</label>
+                @if (ListaKurseva.Count > 0)
+                {
+                    <select class="form-control" @bind="TKurs">
+
+                        @foreach (Kurs k in ListaKurseva)
+                        {
+                            <option value=@k.ID>@k.NazivKursa</option>
+                        }
+                    </select>
+                }
+            </div>
+        </MatDialogContent>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @onclick="CancelDialog">Zatvori</button>
+            <button type="submit" class="btn btn-primary" data-dismiss="modal">Sacuvaj</button>
+        </div>
+    </EditForm>
+    @*</div>*@
+</MatDialog>
+
+
+
+
+
+
+@code {
+    public HubConnection HCS;
+    public HubConnection HCC;
+
+    public Student studenti = new Student();
+
+    public List<Student> ListaStudenata = new List<Student>();
+    public List<Kurs> ListaKurseva = new List<Kurs>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        HCS = new HubConnectionBuilder().WithUrl(NM.ToAbsoluteUri("HubStudenti")).Build();
+        await HCS.StartAsync();
+
+        studenti.kurs = new Kurs();
+
+        HCS.On<List<Student>>("StuKaKlijentu", ls =>
+        {
+            ListaStudenata = ls;
+            Console.WriteLine(ListaStudenata.Count);
+            StateHasChanged();
+        });
+        await HCS.SendAsync("UcitajStudente");
+
+        //Hub konekcija ka habu Kurs
+        HCC = new HubConnectionBuilder().WithUrl(NM.ToAbsoluteUri("HubKursevi")).Build();
+        await HCC.StartAsync();
+
+        HCC.On<List<Kurs>>("KursKaKlijentu", lk =>
+        {
+            ListaKurseva = lk;
+            StateHasChanged();
+        });
+        await HCC.SendAsync("UcitajKurseve");
+    }
+
+    public async Task Sacuvaj()
+    {
+        HCS.StartAsync();
+        await HCS.SendAsync("StudKaSrv", studenti);
+        studenti = new Student();
+        studenti.kurs = new Kurs();
+        await HCS.SendAsync("UcitajStudente");
+    }
+    public void Izmeni(Student s)
+    {
+        dialogIsOpen = true;
+        studenti = s;
+        StateHasChanged();
+        //ZatvoriDijalog();
+        //dialogJeOtvoren = false;
+
+    }
+    public async Task Brisi(Student s)
+    {
+        await HCS.SendAsync("BrisiStudenta", s);
+        studenti = new Student();
+        await HCS.SendAsync("UcitajStudente");
+    }
+    private string Pretraga;
+
+    public void PretraziS()
+    {
+
+        HCS.SendAsync("PretraziStudente", Pretraga);
+    }
+    public string TKurs
+    {
+        get => studenti.kurs.ID.ToString();
+        set
+        {
+            studenti.kurs = ListaKurseva.Find(a => a.ID.ToString() == value);
+            Console.WriteLine(studenti.kurs.ID + "Proba");
+            StateHasChanged();
+            //Console.WriteLine(PrimalacU.Adresa.Ulica);
+        }
+    }
+
+    bool dialogIsOpen = false;
+    public void OpenDialog()
+    {
+
+        dialogIsOpen = true;
+    }
+
+    public void CancelDialog()
+    {
+        dialogIsOpen = false;
+        // studenti = new Student();
+    }
+
+}
