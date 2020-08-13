@@ -1,0 +1,9 @@
+C:\Users\Asus\Desktop\AspSkola\BlazorSkola\BlazorSkola\Shared\bin\Debug\netstandard2.1\BlazorSkola.Shared.deps.json
+C:\Users\Asus\Desktop\AspSkola\BlazorSkola\BlazorSkola\Shared\bin\Debug\netstandard2.1\BlazorSkola.Shared.dll
+C:\Users\Asus\Desktop\AspSkola\BlazorSkola\BlazorSkola\Shared\bin\Debug\netstandard2.1\BlazorSkola.Shared.pdb
+C:\Users\Asus\Desktop\AspSkola\BlazorSkola\BlazorSkola\Shared\obj\Debug\netstandard2.1\BlazorSkola.Shared.csprojAssemblyReference.cache
+C:\Users\Asus\Desktop\AspSkola\BlazorSkola\BlazorSkola\Shared\obj\Debug\netstandard2.1\BlazorSkola.Shared.AssemblyInfoInputs.cache
+C:\Users\Asus\Desktop\AspSkola\BlazorSkola\BlazorSkola\Shared\obj\Debug\netstandard2.1\BlazorSkola.Shared.AssemblyInfo.cs
+C:\Users\Asus\Desktop\AspSkola\BlazorSkola\BlazorSkola\Shared\obj\Debug\netstandard2.1\BlazorSkola.Shared.csproj.CoreCompileInputs.cache
+C:\Users\Asus\Desktop\AspSkola\BlazorSkola\BlazorSkola\Shared\obj\Debug\netstandard2.1\BlazorSkola.Shared.dll
+C:\Users\Asus\Desktop\AspSkola\BlazorSkola\BlazorSkola\Shared\obj\Debug\netstandard2.1\BlazorSkola.Shared.pdb

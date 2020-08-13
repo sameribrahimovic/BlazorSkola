@@ -1,0 +1,124 @@
+﻿@page "/grupe"
+@using BlazorSkola.Shared
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NM
+
+
+    <h3>MENADZMENT KURSEVA</h3>
+    <br />
+    <br />
+    <div class="col-md-3 mb-3">
+        <label class="control-label">PRETRAGA GRUPA</label>
+        <input class="form-control" @bind="@Pretraga" placeholder="Pretraga " />
+        <br />
+        <button class="btn btn-block btn-success" @onclick="PretraziG">Pretraži</button>
+    </div>
+
+
+    <br />
+    <button class="btn btn-block btn-success col-md-3" @onclick=OpenDialog> Dodaj Grupu </button>
+    <br />
+
+
+    <table class='table'>
+        <thead>
+            <tr>
+                <th>Naziv Grupe</th>
+                <th>Izmeni/Brisi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (Grupa g in ListaGrupa)
+            {
+                <tr>
+                    <td>@g.NazivGrupe</td>
+                    <td>
+                        <button class="btn btn-outline-info oi oi-pencil" @onclick="() => Izmeni(g)"></button> |
+                        <button class="btn btn btn-outline-danger oi oi-trash" @onclick="() => Brisi(g)"></button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <MatDialog @bind-IsOpen="@dialogIsOpen">
+        @*<div class="modal-content">*@
+        <EditForm Model="@grupa" OnValidSubmit="@Sacuvaj">
+            <MatDialogTitle>Dodavanje/Izmena</MatDialogTitle>
+            <MatDialogContent>
+                <div class="form-group">
+                    <label>Naziv Grupe</label>
+                    <input class="form-control" @bind-value="grupa.NazivGrupe" />
+                </div>
+            </MatDialogContent>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CancelDialog">Zatvori</button>
+                <button type="submit" class="btn btn-primary" data-dismiss="modal">Sacuvaj</button>
+            </div>
+        </EditForm>
+        @*</div>*@
+    </MatDialog>
+
+
+
+    @code {
+        public HubConnection HCG;
+        public Grupa grupa = new Grupa();
+        public List<Grupa> ListaGrupa = new List<Grupa>();
+
+        protected override async Task OnInitializedAsync()
+        {
+            HCG = new HubConnectionBuilder().WithUrl(NM.ToAbsoluteUri("HubGrupa")).Build();
+            await HCG.StartAsync();
+
+            HCG.On<List<Grupa>>("GrupaKaKlijentu", lg =>
+            {
+                ListaGrupa = lg;
+                StateHasChanged();
+            });
+            await HCG.SendAsync("UcitajGrupe");
+        }
+
+        public async Task Sacuvaj()
+        {
+            await HCG.SendAsync("GrupaKaSrv", grupa);
+            grupa = new Grupa();
+            await HCG.SendAsync("UcitajGrupe");
+        }
+        public void Izmeni(Grupa g)
+        {
+            OpenDialog();
+            grupa = g;
+            StateHasChanged();
+
+        }
+        public async Task Brisi(Grupa g)
+        {
+            await HCG.SendAsync("BrisiGrupu", g);
+            grupa = new Grupa();
+        }
+
+
+        private string Pretraga;
+
+        public void PretraziG()
+        {
+
+            HCG.SendAsync("PretraziGrupe", Pretraga);
+        }
+
+
+
+        bool dialogIsOpen = false;
+        public void OpenDialog()
+        {
+
+            dialogIsOpen = true;
+        }
+
+        public void CancelDialog()
+        {
+            dialogIsOpen = false;
+            grupa = new Grupa();
+        }
+    }

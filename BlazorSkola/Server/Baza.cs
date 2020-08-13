@@ -12,12 +12,16 @@ namespace BlazorSkola.Server
         public DbSet<Radnik> Radniks { get; set; }
         public DbSet<Kurs> Kurses { get; set; }
         public DbSet<Student> Students { get; set; }
+        public DbSet<Grupa> Grupas { get; set; }
+        public DbSet<Uloga> Ulogas { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Radnik>().HasKey(r => r.ID);
             modelBuilder.Entity<Kurs>().HasKey(ks => ks.ID);
             modelBuilder.Entity<Kurs>().HasMany(k => k.listaStudenata); // kurs moze pohadjati vise studenata
             modelBuilder.Entity<Student>().HasKey(s => s.ID);
+            modelBuilder.Entity<Grupa>().HasKey(g => g.ID);
+            modelBuilder.Entity<Grupa>().HasMany(g => g.listaStudenata);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

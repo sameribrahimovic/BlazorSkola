@@ -53,6 +53,8 @@ namespace BlazorSkola.Server
                 endpoints.MapHub<Hubs.HubRadnici>("HubRadnici");
                 endpoints.MapHub<Hubs.HubKursevi>("HubKursevi");
                 endpoints.MapHub<Hubs.HubStudenti>("HubStudenti");
+                endpoints.MapHub<Hubs.HubGrupa>("HubGrupa");
+                endpoints.MapHub<Hubs.HubUloge>("HubUloge");
                 endpoints.MapFallbackToFile("index.html");
             });
         }

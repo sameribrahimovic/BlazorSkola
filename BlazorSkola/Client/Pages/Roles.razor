@@ -1,0 +1,137 @@
+﻿@page "/uloge"
+@using BlazorSkola.Shared
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NM
+
+
+<h3>MENADZMENT KURSEVA</h3>
+<br />
+<br />
+<div class="col-md-3 mb-3">
+    <label class="control-label">PRETRAGA ULOGA</label>
+    <input class="form-control" @bind="@Pretraga" placeholder="Pretraga " />
+    <br />
+    <button class="btn btn-block btn-success" @onclick="PretraziU">Pretraži</button>
+</div>
+
+<br />
+<button class="btn btn-block btn-success col-md-3" @onclick=OpenDialog> Dodaj Ulogu </button>
+<br />
+
+
+<table class='table'>
+    <thead>
+        <tr>
+            <th>Naziv Uloge</th>
+            <th>Izmeni/Brisi</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (Uloga u in ListaUloga)
+        {
+            <tr>
+                <td>@u.NazivUloge</td>
+                <td>
+                    <button class="btn btn-outline-info oi oi-pencil" @onclick="() => Izmeni(u)"></button> |
+                    <button class="btn btn btn-outline-danger oi oi-trash" @onclick="() => Brisi(u)"></button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<MatDialog @bind-IsOpen="@dialogIsOpen">
+    @*<div class="modal-content">*@
+    <EditForm Model="@uloga" OnValidSubmit="@Sacuvaj">
+        <MatDialogTitle>Dodavanje/Izmena</MatDialogTitle>
+        <MatDialogContent>
+            <div class="form-group">
+                <label>Naziv Uloge</label>
+                <input class="form-control" @bind-value="uloga.NazivUloge" />
+            </div>
+        </MatDialogContent>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @onclick="CancelDialog">Zatvori</button>
+            <button type="submit" class="btn btn-primary" data-dismiss="modal">Sacuvaj</button>
+        </div>
+    </EditForm>
+    @*</div>*@
+</MatDialog>
+
+@code {
+
+    public HubConnection HCU;
+    public Uloga uloga = new Uloga();
+    public List<Uloga> ListaUloga = new List<Uloga>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        HCU = new HubConnectionBuilder().WithUrl(NM.ToAbsoluteUri("HubUloge")).Build();
+        await HCU.StartAsync();
+
+        HCU.On<List<Uloga>>("UlogaKaKlijentu", lu =>
+        {
+            ListaUloga = lu;
+            StateHasChanged();
+        });
+        await HCU.SendAsync("UcitajUloge");
+    }
+
+    public async Task Sacuvaj()
+    {
+        await HCU.SendAsync("UlogaKaSrv", uloga);
+        uloga = new Uloga();
+        await HCU.SendAsync("UcitajUloge");
+    }
+    public void Izmeni(Uloga u)
+    {
+        OpenDialog();
+        uloga = u;
+        StateHasChanged();
+        //ZatvoriDijalog();
+        //dialogJeOtvoren = false;
+
+    }
+    public async Task Brisi(Uloga u)
+    {
+        await HCU.SendAsync("BrisiUlogu", u);
+        uloga = new Uloga();
+    }
+
+
+    private string Pretraga;
+
+    public void PretraziU()
+    {
+
+        HCU.SendAsync("PretraziUloge", Pretraga);
+    }
+
+
+
+    bool dialogIsOpen = false;
+    public void OpenDialog()
+    {
+
+        dialogIsOpen = true;
+    }
+
+    public void CancelDialog()
+    {
+        dialogIsOpen = false;
+        uloga = new Uloga();
+    }
+
+
+    ////modalni prozor
+    //bool showModal = false;
+
+    //void ModalShow() => showModal = true;
+    //void ModalCancel()
+    //{
+    //    showModal = false;
+    //    //ako odustane napravi prazan objekat
+    //    kurs = new Kurs();
+    //}
+    //void ModalOk() => showModal = false;
+}
